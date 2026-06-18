@@ -95,15 +95,18 @@ async function saveNewWord() {
       fetchList();
     }
 
-    function renderList(data) {
-      const container = document.getElementById('word-list');
-      container.innerHTML = data.map(i => `
-        <div class="list-item">
-          <span>${i.word}</span>
-          <span class="material-icons">chevron_right</span>
-        </div>
-      `).join('');
-    }
+function renderList(data) {
+  const container = document.getElementById('word-list');
+  container.innerHTML = data.map(i => `
+    <div class="list-item" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <strong>${i.word}</strong>
+        <p style="font-size: 0.9em; color: #555; margin: 5px 0 0 0;">${i.explanation || "解説なし"}</p>
+      </div>
+      <span class="material-icons">chevron_right</span>
+    </div>
+  `).join('');
+}
 
     function updatePostIcon(dataList) {
       const threeDays = 3 * 24 * 60 * 60 * 1000;

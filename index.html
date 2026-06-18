@@ -64,12 +64,34 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbwZy0hsMesNjKGKIJELKoJO
       }
     }
 
-    async function saveNewWord() {
+async function saveNewWord() {
       const inputEl = document.getElementById('word-input');
+      const btnEl = document.querySelector('.btn');
       const text = inputEl.value.trim();
+      
       if (!text) return;
+
+      // 1. 保存中を演出
+      const originalBtnText = btnEl.innerText;
+      btnEl.innerText = "保存中...";
+      btnEl.disabled = true;
+
+      // 2. 楽観的UI更新：通信を待たずに先に画面に出す
+      const list = document.getElementById('word-list');
+      list.insertAdjacentHTML('afterbegin', `<div class="list-item"><span>${text}</span></div>`);
+
+      // 3. 通信
+      await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'save', userId: userId, word: text })
+      });
+
+      // 4. 元に戻す
       inputEl.value = "";
-      await sendRequest('save', { word: text });
+      btnEl.innerText = originalBtnText;
+      btnEl.disabled = false;
+      
+      // 最後にもう一度最新リストを取得（念のため）
       fetchList();
     }
 

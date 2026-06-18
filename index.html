@@ -40,7 +40,7 @@
   </div>
 
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwZy0hsMesNjKGKIJELKoJO5rAgxGkGTA5_MPW7_Wbzb6kHdxuvTSjtbSFyznkP5BD6aw/exec"; // ★ここに新しいGASのURLを入れる
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwZy0hsMesNjKGKIJELKoJO5rAgxGkGTA5_MPW7_Wbzb6kHdxuvTSjtbSFyznkP5BD6aw/exec";
     let userId = localStorage.getItem('myUserId');
     if (!userId) {
       userId = prompt("初めての方ですね。IDを入力してください:");
@@ -55,6 +55,7 @@
       return await response.json();
     }
 
+    // --- 既存の機能を復活させたメイン処理 ---
     async function fetchList() {
       const result = await sendRequest('read');
       if (result.status === 'success') {
@@ -63,21 +64,28 @@
       }
     }
 
-    function renderList(data) {
-      const container = document.getElementById('word-list');
-      container.innerHTML = data.map(i => `<div class="list-item">${i.word}</div>`).join('');
-    }
-
     async function saveNewWord() {
-      const word = document.getElementById('word-input').value;
-      if (!word) return;
-      await sendRequest('save', { word });
-      document.getElementById('word-input').value = "";
+      const inputEl = document.getElementById('word-input');
+      const text = inputEl.value.trim();
+      if (!text) return;
+      inputEl.value = "";
+      await sendRequest('save', { word: text });
       fetchList();
     }
 
+    function renderList(data) {
+      const container = document.getElementById('word-list');
+      container.innerHTML = data.map(i => `
+        <div class="list-item">
+          <span>${i.word}</span>
+          <span class="material-icons">chevron_right</span>
+        </div>
+      `).join('');
+    }
+
     function updatePostIcon(dataList) {
-      const unread = dataList.filter(item => (new Date().getTime() - new Date(item.date).getTime()) < (3 * 24 * 60 * 60 * 1000));
+      const threeDays = 3 * 24 * 60 * 60 * 1000;
+      const unread = dataList.filter(item => (new Date().getTime() - new Date(item.date).getTime()) < threeDays);
       const badge = document.getElementById('unread-count');
       if (unread.length > 0) {
         badge.innerText = unread.length; badge.style.display = 'inline';
@@ -87,4 +95,7 @@
       }
     }
 
-    function showUnreadList()
+    function showUnreadList() { document.getElementById('unread-modal').style.display = 'block'; }
+    function closeModal() { document.getElementById('unread-modal').style.display = 'none'; }
+    window.onload = fetchList;
+  </script>

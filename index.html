@@ -6,16 +6,14 @@
   <title>脳のメモリ解放</title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
-    :root { --bg-color: #f6f8fa; --card-bg: #ffffff; --text-color: #24292f; --primary-color: #0969da; --border-color: #d0d7de; --danger-color: #cf222e; }
-    body { font-family: -apple-system, sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; display: flex; justify-content: center; }
-    .app-container { width: 100%; max-width: 500px; min-height: 90vh; display: flex; flex-direction: column; }
+    :root { --bg-color: #f6f8fa; --card-bg: #ffffff; --text-color: #24292f; --primary-color: #0969da; --border-color: #d0d7de; }
+    body { font-family: sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; display: flex; justify-content: center; }
+    .app-container { width: 100%; max-width: 500px; }
     .page { display: none; } .active-page { display: block; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .input-box { background: var(--card-bg); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; }
-    input, textarea { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border-color); font-size: 16px; margin-bottom: 12px; }
+    input, textarea { width: 100%; padding: 12px; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 12px; }
     .btn { background: var(--primary-color); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; }
     .list-item { background: var(--card-bg); padding: 16px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border-color); cursor: pointer; display: flex; justify-content: space-between; }
-    /* 新規追加分 */
     #post-icon { position: fixed; top: 20px; right: 20px; cursor: pointer; font-size: 24px; z-index: 1000; }
     #unread-count { background: red; color: white; border-radius: 50%; font-size: 12px; padding: 2px 6px; display: none; }
     #unread-modal { display: none; position: fixed; top: 60px; right: 20px; background: white; border: 1px solid var(--border-color); padding: 15px; width: 280px; max-height: 300px; overflow-y: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001; }
@@ -32,39 +30,54 @@
 
   <div class="app-container">
     <div id="page-list" class="page active-page">
-      <header><h1>🧠 脳のメモリ解放</h1></header>
+      <h1>🧠 脳のメモリ解放</h1>
       <div class="input-box">
-        <input type="text" id="word-input" placeholder="入力...">
+        <input type="text" id="word-input" placeholder="単語を入力...">
         <button class="btn" onclick="saveNewWord()">解析して保存</button>
       </div>
       <div id="word-list"></div>
     </div>
-    
-    <div id="page-detail" class="page">
-      <button onclick="goToPage('page-list')">戻る</button>
-      <h2 id="detail-word"></h2>
-      <div id="detail-explanation"></div>
-    </div>
   </div>
 
   <script>
-    const GAS_URL = "あなたのGASのURL";
-    let itemsData = [];
-    let activeIndex = null;
+    const GAS_URL = "あなたのGASのURL"; // ★ここに新しいGASのURLを入れる
+    let userId = localStorage.getItem('myUserId');
+    if (!userId) {
+      userId = prompt("初めての方ですね。IDを入力してください:");
+      localStorage.setItem('myUserId', userId);
+    }
 
-    window.onload = () => fetchList();
+    async function sendRequest(action, data = {}) {
+      const response = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify({ ...data, action, userId })
+      });
+      return await response.json();
+    }
 
     async function fetchList() {
-      const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'read' }) });
-      const result = await res.json();
-      itemsData = result.data;
-      renderList();
-      updatePostIcon(itemsData);
+      const result = await sendRequest('read');
+      if (result.status === 'success') {
+        renderList(result.data);
+        updatePostIcon(result.data);
+      }
+    }
+
+    function renderList(data) {
+      const container = document.getElementById('word-list');
+      container.innerHTML = data.map(i => `<div class="list-item">${i.word}</div>`).join('');
+    }
+
+    async function saveNewWord() {
+      const word = document.getElementById('word-input').value;
+      if (!word) return;
+      await sendRequest('save', { word });
+      document.getElementById('word-input').value = "";
+      fetchList();
     }
 
     function updatePostIcon(dataList) {
-      const threeDays = 3 * 24 * 60 * 60 * 1000;
-      const unread = dataList.filter(item => (new Date().getTime() - new Date(item.date).getTime()) < threeDays);
+      const unread = dataList.filter(item => (new Date().getTime() - new Date(item.date).getTime()) < (3 * 24 * 60 * 60 * 1000));
       const badge = document.getElementById('unread-count');
       if (unread.length > 0) {
         badge.innerText = unread.length; badge.style.display = 'inline';
@@ -74,6 +87,4 @@
       }
     }
 
-    function showUnreadList() { document.getElementById('unread-modal').style.display = 'block'; }
-    function closeModal() { document.getElementById('unread-modal').style.display = 'none'; }
-    function goToPage(id) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page')); document.getElementById(id).classList
+    function showUnreadList()

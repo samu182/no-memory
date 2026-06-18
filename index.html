@@ -1,128 +1,185 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>脳のメモリ解放</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/192">
-    <link rel="manifest" href="manifest.json">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
-        .app-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 400px; box-sizing: border-box; margin-bottom: 25px; }
-        h1 { color: #1d1d1f; font-size: 22px; margin-top: 0; margin-bottom: 8px; font-weight: 600; }
-        p { color: #86868b; font-size: 13px; margin-top: 0; margin-bottom: 20px; line-height: 1.4; }
-        input { width: 100%; padding: 14px; border: 1px solid #d2d2d7; border-radius: 12px; font-size: 15px; box-sizing: border-box; margin-bottom: 12px; outline: none; transition: border-color 0.2s; }
-        input:focus { border-color: #0071e3; }
-        button { width: 100%; background: #0071e3; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer; }
-        button:disabled { background: #a2a2a6; }
-        .list-container { width: 100%; max-width: 400px; box-sizing: border-box; }
-        .list-title { font-size: 15px; color: #1d1d1f; font-weight: 600; margin-bottom: 12px; text-align: left; padding-left: 5px; }
-        .card { background: white; padding: 16px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-bottom: 12px; text-align: left; border-left: 4px solid #0071e3; }
-        .card-word { font-weight: bold; color: #1d1d1f; font-size: 15px; margin-bottom: 6px; }
-        .card-exp { color: #515154; font-size: 13px; line-height: 1.4; }
-        .loading { color: #86868b; font-size: 13px; text-align: center; padding: 20px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>脳のメモリ解放</title>
+  <style>
+    /* アプリらしいデザインにするためのCSS */
+    body { font-family: sans-serif; padding: 20px; background: #f5f6fa; color: #333; }
+    
+    /* 画面切り替えの仕組み */
+    .page { display: none; }
+    .active-page { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* メインページの要素 */
+    input { padding: 12px; width: calc(100% - 24px); border-radius: 8px; border: 1px solid #ccc; font-size: 16px; margin-bottom: 10px; }
+    .save-btn { background: #1e90ff; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; }
+    .list-item { background: white; padding: 15px; margin-top: 10px; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-weight: bold; border-left: 5px solid #1e90ff; }
+    
+    /* 詳細ページの要素 */
+    .back-btn { background: #ddd; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; }
+    .detail-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .date-text { color: #888; font-size: 13px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .url-link { display: inline-block; margin-top: 15px; color: #1e90ff; text-decoration: none; font-weight: bold; border: 1px solid #1e90ff; padding: 8px 12px; border-radius: 5px; }
+    .delete-btn { background: #ff4757; color: white; border: none; padding: 12px; border-radius: 8px; margin-top: 25px; cursor: pointer; width: 100%; font-weight: bold; }
+  </style>
 </head>
 <body>
-    <div class="app-container">
-        <h1>🧠 脳のメモリ解放</h1>
-        <p>業務中の「わからない」を瞬時にストックし、<br>スマートなナレッジ蓄積をサポートします</p>
-        <input type="text" id="wordInput" placeholder="例：ミーティングで出たn8nってやつ入れといて！">
-        <button id="saveBtn" onclick="saveWord()">ナレッジを蓄積する</button>
+
+  <!-- ==================== -->
+  <!-- 1. メイン（一覧）ページ -->
+  <!-- ==================== -->
+  <div id="main-page" class="page active-page">
+    <h2>🧠 脳のメモリ解放</h2>
+    <input type="text" id="word-input" placeholder="気になる言葉を入力...">
+    <button class="save-btn" onclick="saveWord()">解析して保存</button>
+    <div id="loading" style="display: none; margin-top: 10px; color: #ff6b81; font-weight: bold;">AIが考え中...🤔</div>
+    
+    <!-- ここにリストが表示されます -->
+    <div id="word-list" style="margin-top: 20px;"></div>
+  </div>
+
+  <!-- ==================== -->
+  <!-- 2. 詳細ページ -->
+  <!-- ==================== -->
+  <div id="detail-page" class="page">
+    <button class="back-btn" onclick="goBack()">🔙 一覧に戻る</button>
+    <div class="detail-card">
+      <h2 id="detail-word" style="margin-top: 0;"></h2>
+      <div id="detail-date" class="date-text"></div>
+      <p id="detail-explanation" style="line-height: 1.6;"></p>
+      
+      <!-- 参考サイトボタン（URLがある時だけ表示） -->
+      <a id="detail-url" class="url-link" href="#" target="_blank" style="display: none;">🔗 参考サイトを開く</a>
+      
+      <!-- 削除ボタン -->
+      <button id="delete-btn" class="delete-btn" onclick="deleteWord()">🗑️ この単語を削除</button>
     </div>
+  </div>
 
-    <div class="list-container">
-        <div class="list-title">📚 ストックしたナレッジ一覧</div>
-        <div id="knowledgeList">
-            <div class="loading">読み込み中...</div>
-        </div>
-    </div>
+  <script>
+    // 🚨🚨🚨 ここに、稼働中のGASのURLを貼り付けてください！ 🚨🚨🚨
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwBPVz6x8ETBILGok1DrFkSmhY3nCPqzT_oxquk28TiXz0Kv9GpxrrZ54pEX1evewADaw/exec";
 
-    <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyaMm8Ku03rauIDfcfIoZvUZ7vFzUXKAUcQ9XIu5bWWKo2-bqy22li5d92wBpSRioNoTA/exec";
+    let currentDataList = []; // 取得したデータを覚えておく箱
+    let currentDetailRow = null; // 現在開いている単語のスプレッドシート行番号
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log('Error:', err));
-        }
+    // 画面を開いた瞬間にリストを読み込む
+    window.onload = loadList;
 
-        // アプリが開いた瞬間に、自動で過去の一覧を読み込む
-        window.onload = function() {
-            fetchList();
-        };
+    // 【1】リスト取得機能
+    async function loadList() {
+      document.getElementById("word-list").innerHTML = "読み込み中...";
+      try {
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "read" })
+        });
+        const json = await res.json();
+        currentDataList = json.data;
+        renderList();
+      } catch (e) {
+        document.getElementById("word-list").innerHTML = "読み込みエラーが発生しました。";
+      }
+    }
 
-        function fetchList() {
-            fetch(GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "read" })
-            })
-            .then(res => res.json())
-            .then(res => {
-                if(res.status === "success") renderList(res.data);
-            })
-            .catch(err => {
-                document.getElementById('knowledgeList').innerHTML = '<div class="loading">データの取得に失敗しました</div>';
-            });
-        }
+    // 【2】リストを画面に描画する機能
+    function renderList() {
+      const listDiv = document.getElementById("word-list");
+      listDiv.innerHTML = "";
+      currentDataList.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "list-item";
+        div.innerText = item.word;
+        // タップしたら詳細ページを開く
+        div.onclick = () => showDetail(index);
+        listDiv.appendChild(div);
+      });
+    }
 
-        function saveWord() {
-            const wordInput = document.getElementById('wordInput');
-            const btn = document.getElementById('saveBtn');
-            const text = wordInput.value.trim();
-            
-            if(!text) {
-                alert('文章を入力してください。');
-                return;
-            }
+    // 【3】保存機能
+    async function saveWord() {
+      const input = document.getElementById("word-input").value;
+      if (!input) return;
 
-            btn.disabled = true;
-            btn.innerText = "AIが解析中...";
+      document.getElementById("loading").style.display = "block";
+      document.getElementById("word-input").value = "";
 
-            fetch(GAS_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "save", word: text })
-            })
-            .then(res => res.json())
-            .then(res => {
-                if(res.status === "success") {
-                    alert(`「${res.word}」の解析・蓄積が完了しました！`);
-                    wordInput.value = '';
-                    renderList(res.data); // 最新の一覧に自動更新！
-                } else {
-                    alert('エラーが発生しました：' + res.message);
-                }
-            })
-            .catch(err => alert('通信エラーが発生しました'))
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerText = "ナレッジを蓄積する";
-            });
-        }
+      try {
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "save", word: input })
+        });
+        const json = await res.json();
+        currentDataList = json.data;
+        renderList();
+      } catch (e) {
+        alert("保存中にエラーが発生しました。");
+      } finally {
+        document.getElementById("loading").style.display = "none";
+      }
+    }
 
-        function renderList(data) {
-            const listDiv = document.getElementById('knowledgeList');
-            if(!data || data.length === 0) {
-                listDiv.innerHTML = '<div class="loading">まだストックはありません</div>';
-                return;
-            }
-            
-            let html = '';
-            data.forEach(item => {
-                html += `
-                    <div class="card">
-                        <div class="card-word">${escapeHtml(item.word)}</div>
-                        <div class="card-exp">${escapeHtml(item.explanation)}</div>
-                    </div>
-                `;
-            });
-            listDiv.innerHTML = html;
-        }
+    // 【4】詳細ページを表示する機能
+    function showDetail(index) {
+      const item = currentDataList[index];
+      currentDetailRow = item.row; // 削除する時のために行番号を記憶
 
-        function escapeHtml(str) {
-            if(!str) return '';
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-    </script>
+      document.getElementById("detail-word").innerText = item.word;
+      
+      // 日時を見やすいフォーマット（例：2026/6/18 15:30:00）に変換
+      const dateObj = new Date(item.date);
+      document.getElementById("detail-date").innerText = "入力日時: " + dateObj.toLocaleString('ja-JP');
+      
+      document.getElementById("detail-explanation").innerText = item.explanation;
+
+      // URLが存在する場合のみボタンを表示
+      const urlEl = document.getElementById("detail-url");
+      if (item.url && item.url !== "") {
+        urlEl.href = item.url;
+        urlEl.style.display = "inline-block";
+      } else {
+        urlEl.style.display = "none";
+      }
+
+      // 画面の切り替え（メインを隠して、詳細を表示）
+      document.getElementById("main-page").classList.remove("active-page");
+      document.getElementById("detail-page").classList.add("active-page");
+    }
+
+    // 【5】メインページに戻る機能
+    function goBack() {
+      document.getElementById("detail-page").classList.remove("active-page");
+      document.getElementById("main-page").classList.add("active-page");
+    }
+
+    // 【6】削除機能
+    async function deleteWord() {
+      // 誤タップ防止の確認メッセージ
+      if (!confirm("本当にこの単語を削除しますか？")) return;
+
+      const btn = document.getElementById("delete-btn");
+      btn.innerText = "削除中...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "delete", row: currentDetailRow })
+        });
+        const json = await res.json();
+        currentDataList = json.data; // リストを最新状態に更新
+        renderList();
+        goBack(); // 削除が完了したら一覧画面に戻る
+      } catch (e) {
+        alert("削除中にエラーが発生しました。");
+      } finally {
+        btn.innerText = "🗑️ この単語を削除";
+        btn.disabled = false;
+      }
+    }
+  </script>
 </body>
 </html>

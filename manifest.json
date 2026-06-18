@@ -1,15 +1,26 @@
 {
-  "name": "脳のメモリ解放アプリ",
-  "short_name": "脳メモリ",
-  "start_url": "index.html",
-  "display": "standalone",
-  "background_color": "#f5f7fa",
-  "theme_color": "#0071e3",
-  "icons": [
-    {
-      "src": "https://via.placeholder.com/192",
-      "sizes": "192x192",
-      "type": "image/png"
-    }
-  ]
+"name": "脳のメモリ解放",
+"short_name": "メモリ解放",
+"start_url": "./index.html",
+"display": "standalone",
+"background_color": "#f5f6fa",
+"theme_color": "#1e90ff",
+"icons": [
+{
+"src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f9e0.png",
+"sizes": "72x72",
+"type": "image/png",
+"purpose": "any"
+},
+{
+"src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/128x128/1f9e0.png",
+"sizes": "128x128",
+"type": "image/png"
+},
+{
+"src": "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/512x512/1f9e0.png",
+"sizes": "512x512",
+"type": "image/png"
+}
+]
 }
